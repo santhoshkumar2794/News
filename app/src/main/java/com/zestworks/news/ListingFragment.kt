@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProviders
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.zestworks.news.model.LocationFetchFailed
 import com.zestworks.news.model.LocationPermissionDenied
 import com.zestworks.news.model.RequestLocationPermission
 import com.zestworks.news.viewmodel.NewsViewModel
@@ -31,8 +32,8 @@ class ListingFragment : Fragment() {
     }
 
     override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_listing, container, false)
@@ -59,7 +60,7 @@ class ListingFragment : Fragment() {
                 if (grantResults.isNotEmpty()) {
                     when (grantResults[0]) {
                         PackageManager.PERMISSION_GRANTED -> getCurrentLocation()
-                        PackageManager.PERMISSION_DENIED -> newsViewModel.locationPermissionDenied()
+                        PackageManager.PERMISSION_DENIED -> newsViewModel.onLocationPermissionDenied()
                     }
                 }
             }
@@ -69,20 +70,25 @@ class ListingFragment : Fragment() {
 
     private fun bindObservers() {
         newsViewModel.viewEffects().observe(
-                viewLifecycleOwner,
-                Observer {
-                    when (it) {
-                        RequestLocationPermission -> requestLocation()
-                        LocationPermissionDenied -> showLocationDeniedMessage()
-                        null -> return@Observer
-                    }
-                    newsViewModel.onViewEffectCompleted()
+            viewLifecycleOwner,
+            Observer {
+                when (it) {
+                    RequestLocationPermission -> requestLocation()
+                    LocationPermissionDenied -> showLocationFailedMessage()
+                    LocationFetchFailed -> showLocationFailedMessage()
+                    null -> return@Observer
                 }
+                newsViewModel.onViewEffectCompleted()
+            }
         )
     }
 
     private fun requestLocation() {
-        if (checkSelfPermission(activity!!, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(
+                activity!!,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             showLocationDialog()
             return
         }
@@ -90,17 +96,17 @@ class ListingFragment : Fragment() {
 
     private fun showLocationDialog() {
         val alertDialog = MaterialAlertDialogBuilder(context!!)
-                .setTitle("Location")
-                .setMessage("News app uses current location to provide more relevant local news")
-                .setNegativeButton("No,Thanks") { dialog, _ ->
-                    newsViewModel.locationPermissionDenied()
-                    dialog.dismiss()
-                }
-                .setPositiveButton("Ok") { dialog, _ ->
-                    requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_REQUEST_CODE)
-                    dialog.dismiss()
-                }
-                .create()
+            .setTitle("Location")
+            .setMessage("News app uses current location to provide more relevant local news")
+            .setNegativeButton("No,Thanks") { dialog, _ ->
+                newsViewModel.onLocationPermissionDenied()
+                dialog.dismiss()
+            }
+            .setPositiveButton("Ok") { dialog, _ ->
+                requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_REQUEST_CODE)
+                dialog.dismiss()
+            }
+            .create()
 
         alertDialog.setCanceledOnTouchOutside(false)
         alertDialog.show()
@@ -121,7 +127,7 @@ class ListingFragment : Fragment() {
         }
     }
 
-    private fun showLocationDeniedMessage() {
+    private fun showLocationFailedMessage() {
         Snackbar.make(view!!, "Failed to get your location. Check location settings.", Snackbar.LENGTH_SHORT).apply {
             animationMode = Snackbar.ANIMATION_MODE_SLIDE
             show()

@@ -1,12 +1,10 @@
 package com.zestworks.news.viewmodel
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.zestworks.news.model.Location
-import com.zestworks.news.model.LocationPermissionDenied
-import com.zestworks.news.model.RequestLocationPermission
-import com.zestworks.news.model.ViewEffects
+import com.zestworks.news.model.*
 
 class NewsViewModel : ViewModel() {
 
@@ -16,13 +14,16 @@ class NewsViewModel : ViewModel() {
 
     fun viewEffects(): LiveData<ViewEffects> = viewEffectsLiveData
 
+    @VisibleForTesting
+    fun locationData() : LiveData<Location> = locationLiveData
+
     fun onListingStart() {
         if (locationLiveData.value == null) {
             viewEffectsLiveData.postValue(RequestLocationPermission)
         }
     }
 
-    fun locationPermissionDenied() {
+    fun onLocationPermissionDenied() {
         viewEffectsLiveData.postValue(LocationPermissionDenied)
         locationLiveData.postValue(Location.getDefaultInstance())
     }
@@ -32,6 +33,7 @@ class NewsViewModel : ViewModel() {
     }
 
     fun onLocationFailed() {
+        viewEffectsLiveData.postValue(LocationFetchFailed)
         locationLiveData.postValue(Location.getDefaultInstance())
     }
 
