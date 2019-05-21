@@ -3,19 +3,29 @@ package com.zestworks.news.viewmodel
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 import com.zestworks.news.model.*
+import com.zestworks.news.repository.Repository
 
-class NewsViewModel : ViewModel() {
+class NewsViewModel(private val repository: Repository) : ViewModel() {
 
     private val viewEffectsLiveData: MutableLiveData<ViewEffects> = MutableLiveData()
 
     private val locationLiveData: MutableLiveData<Location> = MutableLiveData()
 
+    private val headlinesResult = Transformations.map(locationLiveData) {
+        repository.getTopHeadlines(it.countryCode)
+    }
+
     fun viewEffects(): LiveData<ViewEffects> = viewEffectsLiveData
 
+    fun articlesList() = Transformations.switchMap(headlinesResult) { it.pagedList }!!
+
+    fun networkState() = Transformations.switchMap(headlinesResult) { it.networkState }!!
+
     @VisibleForTesting
-    fun locationData() : LiveData<Location> = locationLiveData
+    fun locationData(): LiveData<Location> = locationLiveData
 
     fun onListingStart() {
         if (locationLiveData.value == null) {
@@ -25,7 +35,7 @@ class NewsViewModel : ViewModel() {
 
     fun onLocationPermissionDenied() {
         viewEffectsLiveData.postValue(LocationPermissionDenied)
-        locationLiveData.postValue(Location.getDefaultInstance())
+        onLocationObtained(null)
     }
 
     fun onViewEffectCompleted() {
@@ -43,6 +53,6 @@ class NewsViewModel : ViewModel() {
         } else {
             Location(countryCode = countryCode)
         }
-        locationLiveData.postValue(location)
+        locationLiveData.value = location
     }
 }

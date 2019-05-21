@@ -7,19 +7,22 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.zestworks.news.model.LocationFetchFailed
 import com.zestworks.news.model.LocationPermissionDenied
 import com.zestworks.news.model.RequestLocationPermission
+import com.zestworks.news.viewmodel.ModelUtils
 import com.zestworks.news.viewmodel.NewsViewModel
 
 
@@ -46,7 +49,7 @@ class ListingFragment : Fragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        newsViewModel = ViewModelProviders.of(activity!!)[NewsViewModel::class.java]
+        newsViewModel = ModelUtils.getNewsViewModel(activity = activity as AppCompatActivity)
     }
 
     override fun onStart() {
@@ -81,6 +84,13 @@ class ListingFragment : Fragment() {
                 newsViewModel.onViewEffectCompleted()
             }
         )
+
+        newsViewModel.articlesList().observe(
+            viewLifecycleOwner,
+            Observer {
+                Log.e("articles","size  ${it?.size}")
+            }
+        )
     }
 
     private fun requestLocation() {
@@ -92,6 +102,8 @@ class ListingFragment : Fragment() {
             showLocationDialog()
             return
         }
+
+        getCurrentLocation()
     }
 
     private fun showLocationDialog() {
@@ -120,6 +132,7 @@ class ListingFragment : Fragment() {
             } else {
                 val fromLocation = Geocoder(context!!).getFromLocation(it.latitude, it.longitude, 1)
                 if (fromLocation.isNotEmpty()) {
+                    Toast.makeText(context!!,fromLocation[0].countryCode,Toast.LENGTH_SHORT).show()
                     newsViewModel.onLocationObtained(fromLocation[0].countryCode)
 
                 }

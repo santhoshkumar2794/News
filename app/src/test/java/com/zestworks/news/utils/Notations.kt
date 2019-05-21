@@ -1,4 +1,4 @@
-package com.zestworks.news
+package com.zestworks.news.utils
 
 
 infix fun <T> T.shouldBe(any: Any?) {
