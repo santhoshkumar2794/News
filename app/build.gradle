@@ -77,4 +77,13 @@ dependencies {
     kapt "androidx.room:room-compiler:2.1.0-beta01"
     implementation "androidx.room:room-ktx:2.1.0-beta01" // Kotlin Extensions and Coroutines support for Room
     testImplementation "androidx.room:room-testing:2.1.0-beta01"
+
+    //Relative Time TextView
+    implementation 'com.github.curioustechizen.android-ago:library:1.4.0'
+
+    //Picasso
+    implementation 'com.squareup.picasso:picasso:2.71828'
+
+    //Facebook Shimmer
+    implementation 'com.facebook.shimmer:shimmer:0.4.0'
 }

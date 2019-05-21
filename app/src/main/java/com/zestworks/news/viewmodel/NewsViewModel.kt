@@ -44,7 +44,7 @@ class NewsViewModel(private val repository: Repository) : ViewModel() {
 
     fun onLocationFailed() {
         viewEffectsLiveData.postValue(LocationFetchFailed)
-        locationLiveData.postValue(Location.getDefaultInstance())
+        onLocationObtained(null)
     }
 
     fun onLocationObtained(countryCode: String?) {
