@@ -123,9 +123,9 @@ class ListingFragment : Fragment() {
                                 putExtra(Intent.EXTRA_TITLE, it.title)
                                 putExtra(Intent.EXTRA_TEXT, it.articleLink)
                             }
-                            startActivity(Intent.createChooser(intent, "Share Article"))
+                            startActivity(Intent.createChooser(intent, getString(R.string.share_article)))
                         }
-                        ComingSoon -> Toast.makeText(context!!, "Coming Soon!!", Toast.LENGTH_SHORT).show()
+                        ComingSoon -> Toast.makeText(context!!, getString(R.string.coming_soon), Toast.LENGTH_SHORT).show()
                         null -> return@Observer
                     }
                     newsViewModel.onViewEffectCompleted()
@@ -179,13 +179,13 @@ class ListingFragment : Fragment() {
 
     private fun showLocationDialog() {
         val alertDialog = MaterialAlertDialogBuilder(context!!)
-                .setTitle("Location")
-                .setMessage("News app uses current location to provide more relevant local news")
-                .setNegativeButton("No,Thanks") { dialog, _ ->
+                .setTitle(getString(R.string.location))
+                .setMessage(getString(R.string.location_dialog_message))
+                .setNegativeButton(getString(R.string.no_thanks)) { dialog, _ ->
                     newsViewModel.onLocationPermissionDenied()
                     dialog.dismiss()
                 }
-                .setPositiveButton("Ok") { dialog, _ ->
+                .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
                     requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_REQUEST_CODE)
                     dialog.dismiss()
                 }
@@ -211,14 +211,14 @@ class ListingFragment : Fragment() {
     }
 
     private fun showLocationFailedMessage() {
-        Snackbar.make(view!!, "Failed to get your location. Check location settings.", Snackbar.LENGTH_SHORT).apply {
+        Snackbar.make(view!!, getString(R.string.failed_to_get_location), Snackbar.LENGTH_SHORT).apply {
             animationMode = Snackbar.ANIMATION_MODE_SLIDE
             show()
         }
     }
 
     private fun showRetryMessage() {
-        Snackbar.make(view!!, "OOPS!! Something went wrong..", Snackbar.LENGTH_LONG).apply {
+        Snackbar.make(view!!, getString(R.string.something_went_wrong), Snackbar.LENGTH_LONG).apply {
             animationMode = Snackbar.ANIMATION_MODE_SLIDE
             duration = 5000
             setAction("RETRY") {

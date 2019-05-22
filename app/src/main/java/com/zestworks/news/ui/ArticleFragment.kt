@@ -1,4 +1,4 @@
-package com.zestworks.news
+package com.zestworks.news.ui
 
 
 import android.content.Context
@@ -9,6 +9,9 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.ui.NavigationUI
+import com.zestworks.news.R
 import com.zestworks.news.viewmodel.ModelUtils
 import com.zestworks.news.viewmodel.NewsViewModel
 import kotlinx.android.synthetic.main.fragment_article.*
@@ -29,6 +32,7 @@ class ArticleFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        NavigationUI.setupWithNavController(articleToolbar,findNavController())
         bindObservers()
     }
 
