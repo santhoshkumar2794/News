@@ -31,7 +31,7 @@ class LocationUnitTest {
     lateinit var newsViewModel: NewsViewModel
 
 
-    private val repository: Repository = RepositoryImpl(db = db, newsApi = api)
+    private val repository: Repository = RepositoryImpl(db = db, newsApi = api,ioExecutor = ioExecutor)
 
     @Before
     fun setup() {

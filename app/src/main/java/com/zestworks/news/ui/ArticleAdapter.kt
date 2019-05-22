@@ -16,7 +16,7 @@ import com.zestworks.news.repository.NetworkState
 import java.text.SimpleDateFormat
 import java.util.*
 
-class ArticleAdapter : PagedListAdapter<Article, ArticleAdapter.ArticleHolder>(COMPARATOR) {
+class ArticleAdapter(private val adapterCallback: AdapterCallback) : PagedListAdapter<Article, ArticleAdapter.ArticleHolder>(COMPARATOR) {
 
     companion object {
         private val COMPARATOR = object : DiffUtil.ItemCallback<Article>() {
@@ -56,6 +56,8 @@ class ArticleAdapter : PagedListAdapter<Article, ArticleAdapter.ArticleHolder>(C
         }
 
         val article = getItem(position) ?: return
+
+        holder.bindListener()
 
         holder.source.text = article.source.name
         holder.title.text = article.title
@@ -110,5 +112,16 @@ class ArticleAdapter : PagedListAdapter<Article, ArticleAdapter.ArticleHolder>(C
         val title = view.findViewById<TextView>(R.id.articleTitle)!!
         val timeStamp = view.findViewById<RelativeTimeTextView>(R.id.timeStamp)!!
         val thumbnail = view.findViewById<ImageView>(R.id.thumbnail)!!
+
+        fun bindListener() {
+            itemView.setOnClickListener {
+                val article = getItem(adapterPosition) ?: return@setOnClickListener
+                adapterCallback.onItemClicked(article.articleId)
+            }
+        }
+    }
+
+    interface AdapterCallback {
+        fun onItemClicked(articleId: Int)
     }
 }

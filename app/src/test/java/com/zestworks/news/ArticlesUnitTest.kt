@@ -7,6 +7,7 @@ import androidx.paging.PagedList
 import com.zestworks.news.db.NewsArticleDao
 import com.zestworks.news.db.NewsDb
 import com.zestworks.news.model.Article
+import com.zestworks.news.model.NavigateToArticleView
 import com.zestworks.news.repository.NetworkState
 import com.zestworks.news.repository.Repository
 import com.zestworks.news.repository.RepositoryImpl
@@ -18,6 +19,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
 import java.util.concurrent.Executor
 
@@ -35,13 +37,16 @@ class ArticlesUnitTest {
     lateinit var newsViewModel: NewsViewModel
 
 
-    private val repository: Repository = RepositoryImpl(db = db, newsApi = api)
+    private val repository: Repository = RepositoryImpl(db = db, newsApi = api, ioExecutor = ioExecutor)
 
     @Suppress("UNCHECKED_CAST")
     @Before
     fun setup() {
         Mockito.`when`(db.articles()).thenReturn(dao)
         Mockito.`when`(dao.getTopHeadlines()).thenReturn(FakeDataSource(api, "IN") as DataSource.Factory<Int, Article>)
+        Mockito.`when`(dao.getArticleForId(ArgumentMatchers.anyInt())).thenReturn(
+                Article(articleId = 1, title = "TITLE")
+        )
 
         newsViewModel = NewsViewModel(repository)
 
@@ -102,6 +107,23 @@ class ArticlesUnitTest {
 
         val networkState = getNetworkState(newsViewModel.networkState())
         networkState shouldBe NetworkState.FAILED
+    }
+
+    @Test
+    fun onArticleClicked() {
+        val articles = listOf(Article(articleId = 1, title = "TITLE"))
+        api.addArticles(articles)
+
+        newsViewModel.onLocationObtained("IN")
+
+        newsViewModel.onArticleClicked(1)
+
+        newsViewModel.viewEffects().value shouldBe NavigateToArticleView(1)
+
+        val observer = LoggingObserver<Article>()
+        newsViewModel.articleForId(1).observeForever(observer)
+        MatcherAssert.assertThat(observer.value, CoreMatchers.`is`(CoreMatchers.notNullValue()))
+        observer.value!! shouldBe articles[0]
     }
 
     private fun <T> PagedList<T>.loadAllData() {

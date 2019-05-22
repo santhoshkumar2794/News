@@ -19,4 +19,7 @@ interface NewsArticleDao {
 
     @Query("DELETE FROM Article")
     fun deleteAllArticles()
+
+    @Query("SELECT * FROM Article WHERE articleId =:articleId")
+    fun getArticleForId(articleId: Int): Article
 }

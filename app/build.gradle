@@ -6,6 +6,8 @@ apply plugin: 'kotlin-android-extensions'
 
 apply plugin: 'kotlin-kapt'
 
+apply plugin: "androidx.navigation.safeargs.kotlin"
+
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -75,7 +77,8 @@ dependencies {
     // Room
     implementation "androidx.room:room-runtime:2.1.0-beta01"
     kapt "androidx.room:room-compiler:2.1.0-beta01"
-    implementation "androidx.room:room-ktx:2.1.0-beta01" // Kotlin Extensions and Coroutines support for Room
+    implementation "androidx.room:room-ktx:2.1.0-beta01"
+    // Kotlin Extensions and Coroutines support for Room
     testImplementation "androidx.room:room-testing:2.1.0-beta01"
 
     //Relative Time TextView

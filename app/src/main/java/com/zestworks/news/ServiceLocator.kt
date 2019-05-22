@@ -7,6 +7,7 @@ import com.zestworks.news.api.NewsApi
 import com.zestworks.news.db.NewsDb
 import com.zestworks.news.repository.Repository
 import com.zestworks.news.repository.RepositoryImpl
+import java.util.concurrent.Executors
 
 /**
  * Super simplified service locator implementation to allow us to replace default implementations
@@ -21,7 +22,7 @@ interface ServiceLocator {
             synchronized(LOCK) {
                 if (instance == null) {
                     instance = DefaultServiceLocator(
-                        app = context.applicationContext as Application
+                            app = context.applicationContext as Application
                     )
                 }
                 return instance!!
@@ -56,8 +57,10 @@ class DefaultServiceLocator(val app: Application) : ServiceLocator {
         NewsApi.create()
     }
 
+    private val ioExecutor = Executors.newSingleThreadExecutor()
+
     override fun getRepository(): Repository {
-        return RepositoryImpl(db, api)
+        return RepositoryImpl(db, api, ioExecutor)
     }
 
     override fun getNewsApi(): NewsApi = api

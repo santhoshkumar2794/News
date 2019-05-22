@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -22,6 +23,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.zestworks.news.R
 import com.zestworks.news.model.LocationFetchFailed
 import com.zestworks.news.model.LocationPermissionDenied
+import com.zestworks.news.model.NavigateToArticleView
 import com.zestworks.news.model.RequestLocationPermission
 import com.zestworks.news.viewmodel.ModelUtils
 import com.zestworks.news.viewmodel.NewsViewModel
@@ -37,8 +39,8 @@ class ListingFragment : Fragment() {
     }
 
     override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_listing, container, false)
@@ -48,7 +50,12 @@ class ListingFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         articlesList.apply {
             layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
-            adapter = ArticleAdapter()
+            adapter = ArticleAdapter(
+                adapterCallback = object : ArticleAdapter.AdapterCallback {
+                    override fun onItemClicked(articleId: Int) {
+                        newsViewModel.onArticleClicked(articleId)
+                    }
+                })
         }
         bindObservers()
     }
@@ -85,42 +92,47 @@ class ListingFragment : Fragment() {
 
     private fun bindViewEffects() {
         newsViewModel.viewEffects().observe(
-                viewLifecycleOwner,
-                Observer {
-                    when (it) {
-                        RequestLocationPermission -> requestLocation()
-                        LocationPermissionDenied -> showLocationFailedMessage()
-                        LocationFetchFailed -> showLocationFailedMessage()
-                        null -> return@Observer
+            viewLifecycleOwner,
+            Observer {
+                when (it) {
+                    RequestLocationPermission -> requestLocation()
+                    LocationPermissionDenied -> showLocationFailedMessage()
+                    LocationFetchFailed -> showLocationFailedMessage()
+                    is NavigateToArticleView -> {
+                        val toArticleFragment =
+                            ListingFragmentDirections.actionListingFragmentToArticleFragment(it.articleId)
+                        findNavController().navigate(toArticleFragment)
                     }
-                    newsViewModel.onViewEffectCompleted()
+                    null -> return@Observer
                 }
+                newsViewModel.onViewEffectCompleted()
+            }
         )
     }
 
     private fun bindNetworkState() {
         newsViewModel.networkState().observe(
-                viewLifecycleOwner,
-                Observer {
-                    (articlesList.adapter as ArticleAdapter).setNetworkState(it)
-                }
+            viewLifecycleOwner,
+            Observer {
+                (articlesList.adapter as ArticleAdapter).setNetworkState(it)
+            }
         )
     }
 
     private fun bindArticleList() {
         newsViewModel.articlesList().observe(
-                viewLifecycleOwner,
-                Observer {
-                    (articlesList.adapter as ArticleAdapter).submitList(it)
-                }
+            viewLifecycleOwner,
+            Observer {
+                (articlesList.adapter as ArticleAdapter).submitList(it)
+            }
         )
     }
 
     private fun requestLocation() {
         if (checkSelfPermission(
-                        activity!!,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
+                activity!!,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             showLocationDialog()
             return
@@ -131,17 +143,17 @@ class ListingFragment : Fragment() {
 
     private fun showLocationDialog() {
         val alertDialog = MaterialAlertDialogBuilder(context!!)
-                .setTitle("Location")
-                .setMessage("News app uses current location to provide more relevant local news")
-                .setNegativeButton("No,Thanks") { dialog, _ ->
-                    newsViewModel.onLocationPermissionDenied()
-                    dialog.dismiss()
-                }
-                .setPositiveButton("Ok") { dialog, _ ->
-                    requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_REQUEST_CODE)
-                    dialog.dismiss()
-                }
-                .create()
+            .setTitle("Location")
+            .setMessage("News app uses current location to provide more relevant local news")
+            .setNegativeButton("No,Thanks") { dialog, _ ->
+                newsViewModel.onLocationPermissionDenied()
+                dialog.dismiss()
+            }
+            .setPositiveButton("Ok") { dialog, _ ->
+                requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_REQUEST_CODE)
+                dialog.dismiss()
+            }
+            .create()
 
         alertDialog.setCanceledOnTouchOutside(false)
         alertDialog.show()

@@ -24,6 +24,8 @@ class NewsViewModel(private val repository: Repository) : ViewModel() {
 
     fun networkState() = Transformations.switchMap(headlinesResult) { it.networkState }!!
 
+    fun articleForId(articleId: Int) = repository.getArticleForId(articleId)
+
     @VisibleForTesting
     fun locationData(): LiveData<Location> = locationLiveData
 
@@ -54,5 +56,9 @@ class NewsViewModel(private val repository: Repository) : ViewModel() {
             Location(countryCode = countryCode)
         }
         locationLiveData.value = location
+    }
+
+    fun onArticleClicked(articleId: Int) {
+        viewEffectsLiveData.postValue(NavigateToArticleView(articleId = articleId))
     }
 }
