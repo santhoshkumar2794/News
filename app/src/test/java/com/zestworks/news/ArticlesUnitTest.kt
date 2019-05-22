@@ -8,6 +8,8 @@ import androidx.paging.PagedList
 import com.zestworks.news.db.NewsArticleDao
 import com.zestworks.news.db.NewsDb
 import com.zestworks.news.model.Article
+import com.zestworks.news.model.ComingSoon
+import com.zestworks.news.model.LaunchShareIntent
 import com.zestworks.news.model.NavigateToArticleView
 import com.zestworks.news.repository.NetworkState
 import com.zestworks.news.repository.Repository
@@ -180,6 +182,36 @@ class ArticlesUnitTest {
         newsViewModel.articleForId(1).observeForever(observer)
         MatcherAssert.assertThat(observer.value, CoreMatchers.`is`(CoreMatchers.notNullValue()))
         observer.value!! shouldBe articles[0]
+    }
+
+    /**
+     * Assert when clicking on share launches share intent
+     * */
+    @Test
+    fun onShareClicked() {
+        val articles = listOf(articleFactory.createArticle())
+        api.addArticles(articles)
+
+        newsViewModel.onLocationObtained("IN")
+
+        newsViewModel.onShareClicked(articles[0])
+
+        newsViewModel.viewEffects().value shouldBe LaunchShareIntent(articleLink = articles[0].url, title = articles[0].title)
+    }
+
+    /**
+     * Assert when clicking on save later triggers coming soon event
+     * */
+    @Test
+    fun onSaveLaterClicked() {
+        val articles = listOf(articleFactory.createArticle())
+        api.addArticles(articles)
+
+        newsViewModel.onLocationObtained("IN")
+
+        newsViewModel.onSaveLaterClicked(articles[0])
+
+        newsViewModel.viewEffects().value shouldBe ComingSoon
     }
 
     private fun <T> PagedList<T>.loadAllData() {

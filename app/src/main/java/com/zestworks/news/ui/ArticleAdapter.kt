@@ -118,10 +118,21 @@ class ArticleAdapter(private val adapterCallback: AdapterCallback) : PagedListAd
                 val article = getItem(adapterPosition) ?: return@setOnClickListener
                 adapterCallback.onItemClicked(article.articleId)
             }
+            itemView.findViewById<View>(R.id.shareButton).setOnClickListener {
+                val article = getItem(adapterPosition) ?: return@setOnClickListener
+                adapterCallback.onShareClicked(article)
+            }
+
+            itemView.findViewById<View>(R.id.saveLaterButton).setOnClickListener {
+                val article = getItem(adapterPosition) ?: return@setOnClickListener
+                adapterCallback.onSaveLaterClicked(article)
+            }
         }
     }
 
     interface AdapterCallback {
         fun onItemClicked(articleId: Int)
+        fun onShareClicked(article: Article)
+        fun onSaveLaterClicked(article: Article)
     }
 }

@@ -4,12 +4,14 @@ package com.zestworks.news.ui
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.fragment.app.Fragment
@@ -21,10 +23,7 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.zestworks.news.R
-import com.zestworks.news.model.LocationFetchFailed
-import com.zestworks.news.model.LocationPermissionDenied
-import com.zestworks.news.model.NavigateToArticleView
-import com.zestworks.news.model.RequestLocationPermission
+import com.zestworks.news.model.*
 import com.zestworks.news.repository.NetworkState
 import com.zestworks.news.viewmodel.ModelUtils
 import com.zestworks.news.viewmodel.NewsViewModel
@@ -55,6 +54,14 @@ class ListingFragment : Fragment() {
                     adapterCallback = object : ArticleAdapter.AdapterCallback {
                         override fun onItemClicked(articleId: Int) {
                             newsViewModel.onArticleClicked(articleId)
+                        }
+
+                        override fun onShareClicked(article: Article) {
+                            newsViewModel.onShareClicked(article)
+                        }
+
+                        override fun onSaveLaterClicked(article: Article) {
+                            newsViewModel.onSaveLaterClicked(article)
                         }
                     })
         }
@@ -110,6 +117,15 @@ class ListingFragment : Fragment() {
                                     ListingFragmentDirections.actionListingFragmentToArticleFragment(it.articleId)
                             findNavController().navigate(toArticleFragment)
                         }
+                        is LaunchShareIntent -> {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TITLE, it.title)
+                                putExtra(Intent.EXTRA_TEXT, it.articleLink)
+                            }
+                            startActivity(Intent.createChooser(intent, "Share Article"))
+                        }
+                        ComingSoon -> Toast.makeText(context!!, "Coming Soon!!", Toast.LENGTH_SHORT).show()
                         null -> return@Observer
                     }
                     newsViewModel.onViewEffectCompleted()

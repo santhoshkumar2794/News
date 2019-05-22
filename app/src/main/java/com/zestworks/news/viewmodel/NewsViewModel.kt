@@ -72,7 +72,15 @@ class NewsViewModel(private val repository: Repository) : ViewModel() {
         headlinesResult.value?.refresh?.invoke()
     }
 
-    fun retry(){
+    fun retry() {
         headlinesResult.value!!.retry.invoke()
+    }
+
+    fun onShareClicked(article: Article) {
+        viewEffectsLiveData.postValue(LaunchShareIntent(articleLink = article.url,title = article.title))
+    }
+
+    fun onSaveLaterClicked(article: Article) {
+        viewEffectsLiveData.postValue(ComingSoon)
     }
 }

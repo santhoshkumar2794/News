@@ -45,9 +45,6 @@ class NewsInstrumentedTest {
 
         onView(withId(R.id.swipeRefreshLayout))
             .check(matches(isDisplayed()))
-
-        onView(withId(R.id.articlesList))
-            .check(RecyclerViewItemCountAssertion.withItemCount(20))
     }
 
     /**
