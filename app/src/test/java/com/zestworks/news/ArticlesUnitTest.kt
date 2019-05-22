@@ -2,6 +2,7 @@ package com.zestworks.news
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.paging.DataSource
 import androidx.paging.PagedList
 import com.zestworks.news.db.NewsArticleDao
@@ -95,6 +96,36 @@ class ArticlesUnitTest {
     }
 
     /**
+     * Asserts refresh loads the new data
+     */
+    @Test
+    fun refresh() {
+        val articles1 = (0..5).map { articleFactory.createArticle() }
+        api.addArticles(articles1)
+
+        newsViewModel.onLocationObtained("IN")
+
+        val pagedList = getPagedList(newsViewModel.articlesList())
+        pagedList shouldBe articles1
+
+        val articles2 = (0..5).map { articleFactory.createArticle() }
+        api.clearArticles()
+        api.addArticles(articles2)
+
+        @Suppress("UNCHECKED_CAST")
+        val refreshObserver = Mockito.mock(Observer::class.java) as Observer<NetworkState>
+        newsViewModel.refreshState().observeForever(refreshObserver)
+        newsViewModel.refresh()
+
+        val list2 = getPagedList(newsViewModel.articlesList())
+        list2.loadAllData()
+        list2 shouldBe articles2
+
+        val inOrder = Mockito.inOrder(refreshObserver)
+        inOrder.verify(refreshObserver).onChanged(NetworkState.SUCCESS)
+    }
+
+    /**
      * Asserts the failure message when the initial load cannot complete
      */
     @Test
@@ -107,6 +138,31 @@ class ArticlesUnitTest {
 
         val networkState = getNetworkState(newsViewModel.networkState())
         networkState shouldBe NetworkState.FAILED
+    }
+
+    /**
+     * Asserts the retry logic when the load fails
+     */
+    @Test
+    fun retryAfterFailure() {
+        api.failureMsg = "Failed to fetch"
+
+        newsViewModel.onLocationObtained("IN")
+
+        getPagedList(newsViewModel.articlesList())
+
+        val networkObserver = LoggingObserver<NetworkState>()
+        newsViewModel.networkState().observeForever(networkObserver)
+
+        networkObserver.value shouldBe NetworkState.FAILED
+
+        val articles = (0..5).map { articleFactory.createArticle() }
+        api.failureMsg = null
+        api.addArticles(articles)
+
+        newsViewModel.retry()
+
+        networkObserver.value shouldBe NetworkState.SUCCESS
     }
 
     @Test

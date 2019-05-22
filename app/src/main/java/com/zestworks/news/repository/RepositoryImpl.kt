@@ -44,10 +44,10 @@ class RepositoryImpl(
                 networkState = boundaryCallback.networkStateLiveData,
                 refreshState = refreshState,
                 retry = {
-
+                    boundaryCallback.retryFailedRequest()
                 },
                 refresh = {
-
+                    refreshTrigger.value = null
                 }
 
         )

@@ -10,9 +10,9 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class HeadlineBoundaryCallback(
-    private val countryCode: String,
-    private val newsApi: NewsApi,
-    private val handleResponse: (List<Article>) -> Unit
+        private val countryCode: String,
+        private val newsApi: NewsApi,
+        private val handleResponse: (List<Article>) -> Unit
 ) : PagedList.BoundaryCallback<Article>() {
 
     private var page: Int = 1
@@ -39,27 +39,31 @@ class HeadlineBoundaryCallback(
         networkStateLiveData.postValue(NetworkState.LOADING)
 
         newsApi.getTopHeadlines(countryCode, page)
-            .enqueue(object : Callback<NewsResponse> {
-                override fun onFailure(call: Call<NewsResponse>, t: Throwable) {
-                    networkStateLiveData.postValue(NetworkState.FAILED)
-                }
-
-                override fun onResponse(call: Call<NewsResponse>, response: Response<NewsResponse>) {
-                    val body = response.body()
-                    body?.let {
-
-                        if (it.articles.isNotEmpty()) {
-                            isEndOfList = false
-                            page += 1
-
-                            handleResponse.invoke(it.articles)
-                        } else {
-                            isEndOfList = true
-                        }
-
-                        networkStateLiveData.postValue(NetworkState.SUCCESS)
+                .enqueue(object : Callback<NewsResponse> {
+                    override fun onFailure(call: Call<NewsResponse>, t: Throwable) {
+                        networkStateLiveData.postValue(NetworkState.FAILED)
                     }
-                }
-            })
+
+                    override fun onResponse(call: Call<NewsResponse>, response: Response<NewsResponse>) {
+                        val body = response.body()
+                        body?.let {
+
+                            if (it.articles.isNotEmpty()) {
+                                isEndOfList = false
+                                page += 1
+
+                                handleResponse.invoke(it.articles)
+                            } else {
+                                isEndOfList = true
+                            }
+
+                            networkStateLiveData.postValue(NetworkState.SUCCESS)
+                        }
+                    }
+                })
+    }
+
+    fun retryFailedRequest() {
+        fetchHeadlines()
     }
 }

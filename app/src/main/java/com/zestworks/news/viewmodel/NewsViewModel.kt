@@ -24,10 +24,16 @@ class NewsViewModel(private val repository: Repository) : ViewModel() {
 
     fun networkState() = Transformations.switchMap(headlinesResult) { it.networkState }!!
 
+    fun refreshState() = Transformations.switchMap(headlinesResult) { it.refreshState }!!
+
     fun articleForId(articleId: Int) = repository.getArticleForId(articleId)
 
     @VisibleForTesting
     fun locationData(): LiveData<Location> = locationLiveData
+
+    init {
+        refresh()
+    }
 
     fun onListingStart() {
         if (locationLiveData.value == null) {
@@ -55,10 +61,18 @@ class NewsViewModel(private val repository: Repository) : ViewModel() {
         } else {
             Location(countryCode = countryCode)
         }
-        locationLiveData.value = location
+        locationLiveData.postValue(location)
     }
 
     fun onArticleClicked(articleId: Int) {
         viewEffectsLiveData.postValue(NavigateToArticleView(articleId = articleId))
+    }
+
+    fun refresh() {
+        headlinesResult.value?.refresh?.invoke()
+    }
+
+    fun retry(){
+        headlinesResult.value!!.retry.invoke()
     }
 }

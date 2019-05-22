@@ -3,6 +3,7 @@ package com.zestworks.news
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.room.Dao
 import com.zestworks.news.db.NewsDb
+import com.zestworks.news.model.Location
 import com.zestworks.news.model.LocationFetchFailed
 import com.zestworks.news.model.LocationPermissionDenied
 import com.zestworks.news.model.RequestLocationPermission
@@ -16,7 +17,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestRule
 import org.mockito.Mockito
-import java.util.*
 import java.util.concurrent.Executor
 
 class LocationUnitTest {
@@ -31,7 +31,7 @@ class LocationUnitTest {
     lateinit var newsViewModel: NewsViewModel
 
 
-    private val repository: Repository = RepositoryImpl(db = db, newsApi = api,ioExecutor = ioExecutor)
+    private val repository: Repository = RepositoryImpl(db = db, newsApi = api, ioExecutor = ioExecutor)
 
     @Before
     fun setup() {
@@ -66,7 +66,7 @@ class LocationUnitTest {
         currentViewEffect shouldBe RequestLocationPermission
 
         newsViewModel.onLocationObtained(null)
-        newsViewModel.locationData().value!!.countryCode shouldBe Locale.getDefault().isO3Country
+        newsViewModel.locationData().value!! shouldBe Location.getDefaultInstance()
     }
 
     @Test
@@ -79,7 +79,7 @@ class LocationUnitTest {
         newsViewModel.onLocationPermissionDenied()
         newsViewModel.viewEffects().value shouldBe LocationPermissionDenied
 
-        newsViewModel.locationData().value!!.countryCode shouldBe Locale.getDefault().isO3Country
+        newsViewModel.locationData().value!! shouldBe Location.getDefaultInstance()
     }
 
     @Test
@@ -92,6 +92,6 @@ class LocationUnitTest {
         newsViewModel.onLocationFailed()
         newsViewModel.viewEffects().value shouldBe LocationFetchFailed
 
-        newsViewModel.locationData().value!!.countryCode shouldBe Locale.getDefault().isO3Country
+        newsViewModel.locationData().value!! shouldBe Location.getDefaultInstance()
     }
 }

@@ -25,6 +25,7 @@ import com.zestworks.news.model.LocationFetchFailed
 import com.zestworks.news.model.LocationPermissionDenied
 import com.zestworks.news.model.NavigateToArticleView
 import com.zestworks.news.model.RequestLocationPermission
+import com.zestworks.news.repository.NetworkState
 import com.zestworks.news.viewmodel.ModelUtils
 import com.zestworks.news.viewmodel.NewsViewModel
 import kotlinx.android.synthetic.main.fragment_listing.*
@@ -39,8 +40,8 @@ class ListingFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_listing, container, false)
@@ -51,12 +52,17 @@ class ListingFragment : Fragment() {
         articlesList.apply {
             layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
             adapter = ArticleAdapter(
-                adapterCallback = object : ArticleAdapter.AdapterCallback {
-                    override fun onItemClicked(articleId: Int) {
-                        newsViewModel.onArticleClicked(articleId)
-                    }
-                })
+                    adapterCallback = object : ArticleAdapter.AdapterCallback {
+                        override fun onItemClicked(articleId: Int) {
+                            newsViewModel.onArticleClicked(articleId)
+                        }
+                    })
         }
+
+        swipeRefreshLayout.setOnRefreshListener {
+            newsViewModel.refresh()
+        }
+
         bindObservers()
     }
 
@@ -87,52 +93,66 @@ class ListingFragment : Fragment() {
     private fun bindObservers() {
         bindViewEffects()
         bindNetworkState()
+        bindRefreshState()
         bindArticleList()
     }
 
     private fun bindViewEffects() {
         newsViewModel.viewEffects().observe(
-            viewLifecycleOwner,
-            Observer {
-                when (it) {
-                    RequestLocationPermission -> requestLocation()
-                    LocationPermissionDenied -> showLocationFailedMessage()
-                    LocationFetchFailed -> showLocationFailedMessage()
-                    is NavigateToArticleView -> {
-                        val toArticleFragment =
-                            ListingFragmentDirections.actionListingFragmentToArticleFragment(it.articleId)
-                        findNavController().navigate(toArticleFragment)
+                viewLifecycleOwner,
+                Observer {
+                    when (it) {
+                        RequestLocationPermission -> requestLocation()
+                        LocationPermissionDenied -> showLocationFailedMessage()
+                        LocationFetchFailed -> showLocationFailedMessage()
+                        is NavigateToArticleView -> {
+                            val toArticleFragment =
+                                    ListingFragmentDirections.actionListingFragmentToArticleFragment(it.articleId)
+                            findNavController().navigate(toArticleFragment)
+                        }
+                        null -> return@Observer
                     }
-                    null -> return@Observer
+                    newsViewModel.onViewEffectCompleted()
                 }
-                newsViewModel.onViewEffectCompleted()
-            }
         )
     }
 
     private fun bindNetworkState() {
         newsViewModel.networkState().observe(
-            viewLifecycleOwner,
-            Observer {
-                (articlesList.adapter as ArticleAdapter).setNetworkState(it)
-            }
+                viewLifecycleOwner,
+                Observer {
+                    (articlesList.adapter as ArticleAdapter).setNetworkState(it)
+
+                    if (it == NetworkState.FAILED) {
+                        showRetryMessage()
+                    }
+                }
         )
     }
 
     private fun bindArticleList() {
         newsViewModel.articlesList().observe(
-            viewLifecycleOwner,
-            Observer {
-                (articlesList.adapter as ArticleAdapter).submitList(it)
-            }
+                viewLifecycleOwner,
+                Observer {
+                    (articlesList.adapter as ArticleAdapter).submitList(it)
+                }
+        )
+    }
+
+    private fun bindRefreshState() {
+        newsViewModel.refreshState().observe(
+                viewLifecycleOwner,
+                Observer {
+                    swipeRefreshLayout.isRefreshing = it == NetworkState.LOADING
+                }
         )
     }
 
     private fun requestLocation() {
         if (checkSelfPermission(
-                activity!!,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
+                        activity!!,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
         ) {
             showLocationDialog()
             return
@@ -143,17 +163,17 @@ class ListingFragment : Fragment() {
 
     private fun showLocationDialog() {
         val alertDialog = MaterialAlertDialogBuilder(context!!)
-            .setTitle("Location")
-            .setMessage("News app uses current location to provide more relevant local news")
-            .setNegativeButton("No,Thanks") { dialog, _ ->
-                newsViewModel.onLocationPermissionDenied()
-                dialog.dismiss()
-            }
-            .setPositiveButton("Ok") { dialog, _ ->
-                requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_REQUEST_CODE)
-                dialog.dismiss()
-            }
-            .create()
+                .setTitle("Location")
+                .setMessage("News app uses current location to provide more relevant local news")
+                .setNegativeButton("No,Thanks") { dialog, _ ->
+                    newsViewModel.onLocationPermissionDenied()
+                    dialog.dismiss()
+                }
+                .setPositiveButton("Ok") { dialog, _ ->
+                    requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), LOCATION_REQUEST_CODE)
+                    dialog.dismiss()
+                }
+                .create()
 
         alertDialog.setCanceledOnTouchOutside(false)
         alertDialog.show()
@@ -177,6 +197,17 @@ class ListingFragment : Fragment() {
     private fun showLocationFailedMessage() {
         Snackbar.make(view!!, "Failed to get your location. Check location settings.", Snackbar.LENGTH_SHORT).apply {
             animationMode = Snackbar.ANIMATION_MODE_SLIDE
+            show()
+        }
+    }
+
+    private fun showRetryMessage() {
+        Snackbar.make(view!!, "OOPS!! Something went wrong..", Snackbar.LENGTH_LONG).apply {
+            animationMode = Snackbar.ANIMATION_MODE_SLIDE
+            duration = 5000
+            setAction("RETRY") {
+                newsViewModel.retry()
+            }
             show()
         }
     }
