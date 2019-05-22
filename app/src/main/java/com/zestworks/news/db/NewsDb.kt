@@ -21,7 +21,7 @@ abstract class NewsDb : RoomDatabase() {
         fun instance(context: Context): NewsDb {
             synchronized(LOCK) {
                 if (instance == null) {
-                    instance = Room.inMemoryDatabaseBuilder(context, NewsDb::class.java).build()
+                    instance = Room.databaseBuilder(context, NewsDb::class.java,"news-db").build()
                 }
                 return instance!!
             }
